@@ -5,8 +5,10 @@ class Mastermind:
     def __init__(self, colors):
         self.colors = colors
         self.combination = None
+        self.repetitions = True
         
     def new_game(self, repetitions=False):
+        self.repetitions = repetitions
         if repetitions:
             self.combination = [random.choice(self.colors) for _ in range(4)]
         else:

@@ -6,15 +6,18 @@ import random
 
 
 class Agent:
-    def __init__(self, mastermind=Mastermind):
+    def __init__(self, mastermind=Mastermind, verbose=True):
         self.colors = mastermind.colors
         self.mastermind = mastermind
         self.staying_combis = list(itertools.product(self.colors, repeat=4))
+        if not mastermind.repetitions:
+            self.staying_combis = [c for c in self.staying_combis if len(set(c))==4]
         self.possible_returns = [(0,0),(0,1),(0,2),(0,3),(0,4),
                                  (1,0),(1,1),(1,2),(1,3),
                                  (2,0),(2,1),(2,2),
                                  (3,0), (4,0)]  # (3,1) not possible
         self.turn = 0
+        self.verbose = verbose
     
     
     def play(self):
@@ -26,11 +29,10 @@ class Agent:
         else:
             c = self.getBestMove()
         r = self.mastermind.evaluate(c)
-        #print(f'agent play : {c} => game return : {r[0]} {r[1]}')
         new_self_sc = [sc for sc in self.staying_combis if self.is_compatible(sc, c, r)]
         self.staying_combis = list(new_self_sc)
-        #print('> search space : ', len(self.staying_combis))
-        print(f'{r[0]}  |  {c[0]} {c[1]} {c[2]} {c[3]}  |  {r[1]}       => search space : {len(self.staying_combis)}')
+        if self.verbose:
+            print(f'{r[0]}  |  {c[0]} {c[1]} {c[2]} {c[3]}  |  {r[1]}       => search space : {len(self.staying_combis)}')
         return c
         
         
@@ -78,19 +80,42 @@ if __name__ == '__main__':
     COLORS = [1,2,3,4,5,6,7,8]
 
     game = Mastermind(COLORS)
-    game.new_game(repetitions=True)
+    game.new_game(repetitions=False)
     c = game.combination
+
+    agent = Agent(game, verbose=True)
 
     print('\nRandomly chosen combinantion : ',game.combination)
     print('On left : nb of correct pawns')
     print('On right : nb of misplaced pawns of the correct color')
-    print(f'\nX  |  {c[0]} {c[1]} {c[2]} {c[3]}  |  X       => search space : {8**4}')
-    #print(f'___________________')
+    print(f'\nX  |  {c[0]} {c[1]} {c[2]} {c[3]}  |  X       => search space : {len(agent.staying_combis)}')
     print(f'-------------------')
 
         
-    agent = Agent(game)
     move = agent.play()
     while list(move) != list(game.combination):# and len(agent.staying_combis)>1:
         move = agent.play()
     print('\nCONBINATION : ',move,'\n')
+    
+    
+    
+    ## Counter for mean and max number of moves
+    if False:
+        lm = []
+        game = Mastermind(COLORS)
+        game.new_game(repetitions=True)
+        a = Agent(game)
+        for c in tqdm(a.staying_combis):
+            game = Mastermind(COLORS)
+            game.new_game(repetitions=True)
+            game.combination = c    
+            agent = Agent(game, verbose=False)
+            m = 1
+            move = agent.play()
+            while list(move) != list(game.combination):# and len(agent.staying_combis)>1:
+                move = agent.play()
+                m += 1
+            lm.append(m)
+        
+        print(max(lm))
+        print(sum(lm)/len(lm))
